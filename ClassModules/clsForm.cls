@@ -13,8 +13,8 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Private oForm As frSoFifa
-Private oClsGF As clsGlobalFunc
+Private frm As frSoFifa
+Private cgf As clsGlobalFunc
 Private oClsSF As clsSoFifa
 Private oClsSFL As clsSoFifaLeagues
 
@@ -23,8 +23,8 @@ Public Function FormClose() As Integer
 
     Let FormClose = False
 
-    Set oClsGF = New clsGlobalFunc
-    Set oForm = frSoFifa
+    Set cgf = New clsGlobalFunc
+    Set frm = frSoFifa
     
     On Error GoTo ErrHandler
     
@@ -35,97 +35,35 @@ Public Function FormClose() As Integer
         Case Else
     End Select
 
-    Call oForm.Hide
-    Call Unload(oForm)
+    Call frm.Hide
+    Call Unload(frm)
 
     On Error GoTo 0
     
 Finish:
     On Error Resume Next
-    Set oClsGF = Nothing
-    Set oForm = Nothing
+    Set cgf = Nothing
+    Set frm = Nothing
     Exit Function
     
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "FormClose")
+    Call cgf.DisplayErrMessage("clsForm", "FormClose")
     GoTo Finish
     
 End Function
-
-
-Private Sub LoadVersions()
-    
-    Set oClsGF = New clsGlobalFunc
-    Set oForm = frSoFifa
-
-    With oForm.txVersion
-        Call .Clear
-        Call .AddItem("070001", 0)
-        Call .AddItem("070002", 1)
-        Call .AddItem("080001", 2)
-        Call .AddItem("080002", 3)
-        Call .AddItem("090001", 4)
-        Call .AddItem("090002", 5)
-        Let .ListIndex = 0
-    End With
-
-    On Error GoTo 0
-    
-Finish:
-    On Error Resume Next
-    Set oClsGF = Nothing
-    Set oForm = Nothing
-    Exit Sub
-    
-ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "LoadVersions")
-    GoTo Finish
- 
-End Sub
-
-
-Private Sub DisplayDependencies()
-
-    Dim vMsg As String
-    
-    Set oClsGF = New clsGlobalFunc
-    
-    On Error GoTo ErrHandler
-    
-    Let vMsg = vbNullString
-    Let vMsg = vMsg & "You must install for correct functionality:" & vbCrLf
-    Let vMsg = vMsg & "* SELENIUM VBA: https://github.com/florentbr/SeleniumBasic/releases/tag/v2.0.9.0" & vbCrLf
-    Let vMsg = vMsg & "* CHROME DRIVER: https://chromedriver.storage.googleapis.com/index.html" & vbCrLf & vbCrLf
-    Let vMsg = vMsg & "Put CHROME DRIVE where SELENIUM was installed, Chrome Drive must be according your Chrome version" & vbCrLf
-    Let vMsg = vMsg & "Regards, Edgar Santa Rosa"
-
-    Call MsgBox(vMsg, vbOKOnly)
-    
-    On Error GoTo 0
-    
-Finish:
-    On Error Resume Next
-    Set oClsGF = Nothing
-    Exit Sub
-    
-ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "DisplayDependencies")
-    GoTo Finish
-
-End Sub
 
 
 Public Sub BtnCopyClick()
     
     Dim oDto As VB.Clipboard
     
-    Set oClsGF = New clsGlobalFunc
+    Set cgf = New clsGlobalFunc
     Set oDto = VB.Clipboard
-    Set oForm = frSoFifa
+    Set frm = frSoFifa
     
     On Error GoTo ErrHandler
     
-    With oForm
+    With frm
         If (.txStatsToCopy.Text = vbNullString) Then GoTo Finish
         Call oDto.Clear
         Let .txStatsToCopy.Text = Replace(.txStatsToCopy.Text, "?", "*")
@@ -137,13 +75,13 @@ Public Sub BtnCopyClick()
 
 Finish:
     On Error Resume Next
-    Set oClsGF = Nothing
-    Set oForm = Nothing
+    Set cgf = Nothing
+    Set frm = Nothing
     Set oDto = Nothing
     Exit Sub
 
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "BtnCopyClick")
+    Call cgf.DisplayErrMessage("clsForm", "BtnCopyClick")
     GoTo Finish
     
     
@@ -152,32 +90,38 @@ End Sub
 
 Public Sub BtnClearClick()
     
-    Set oClsGF = New clsGlobalFunc
-    Set oForm = frSoFifa
+    Set cgf = New clsGlobalFunc
+    Set frm = frSoFifa
     
     On Error GoTo ErrHandler
 
-    With oForm
-        Call .txVersion.SetFocus
-        Let .txStatsToCopy.Text = vbNullString
-        Let .txVersion.ListIndex = 0
-        Let .txCountry.ListIndex = 0
-        Let .txCountryHidden.ListIndex = 0
+    With frm
+        Call frm.listPlayer.Clear
+        Call frm.txPlayerHidden.Clear
+        Call frm.txTeam.Clear
+        Call frm.txTeamHidden.Clear
+        Let frm.txMinOver.SelStart = 70
+        Let frm.txMaxOver.SelStart = 99
+        Call frm.txVersion.SetFocus
+        Let frm.txStatsToCopy.Text = vbNullString
+        Let frm.txCountry.ListIndex = 5
+        Let frm.txCountryHidden.ListIndex = 5
+        
     End With
     
-    Call SearchClubsList
+    Call SearchTeamsList
     Call SearchPlayersList
     
     On Error GoTo 0
 
 Finish:
     On Error Resume Next
-    Set oForm = Nothing
-    Set oClsGF = Nothing
+    Set frm = Nothing
+    Set cgf = Nothing
     Exit Sub
 
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "BtnClearClick")
+    Call cgf.DisplayErrMessage("clsForm", "BtnClearClick")
     GoTo Finish
     
 End Sub
@@ -185,151 +129,106 @@ End Sub
 
 Public Sub FormActivate()
     
-    Call DisplayDependencies
-    Call LoadVersions
+    Call SearchGameList
+    Call SearchVersionList
     Call LoadCountries
     Call LoadCountriesHidden
-    Call BtnClearClick
+    Call SearchTeamsList
+    Call SearchPlayersList
 
 End Sub
 
 
 Private Sub LoadCountries()
 
-    Dim vIdx As Integer
-
-    Set oClsGF = New clsGlobalFunc
-    Set oForm = frSoFifa
+    Set cgf = New clsGlobalFunc
+    Set frm = frSoFifa
 
     On Error GoTo ErrHandler
 
-    With oForm.txCountry
+    With frm.txCountry
         Call .Clear
-        
-        Let vIdx = 0
-        Call .AddItem("National Teams", vIdx)
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("Argentina", vIdx)
-
-        If (Val(oForm.txVersion.Text) <> 150001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Brazil", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) >= 140001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Chile", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Colombia", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) > 200028) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Bolivia", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Ecuador", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Paraguay", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Peru", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Uruguay", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("Venezuela", vIdx)
-        End If
-
-        Let vIdx = vIdx + 1
-        Call .AddItem("Mexico", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("United States", vIdx)
-
-        Let vIdx = vIdx + 1
-        Call .AddItem("Austria", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Belgium", vIdx)
-
-        If (Val(oForm.txVersion.Text) >= 190001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Croatia", vIdx)
-        End If
-
-        Let vIdx = vIdx + 1
-        Call .AddItem("Czech", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Denmark", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("England", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("France", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Germany", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Greece", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Italy", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Netherlands", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Norway", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Poland", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Portugal", vIdx)
-
-        If (Val(oForm.txVersion.Text) >= 200001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Romania", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) >= 100001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Russia", vIdx)
-        End If
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("Scotland", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Sweden", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Switzerland", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("Turkey", vIdx)
-        
-        If (Val(oForm.txVersion.Text) >= 140001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Ukraine", vIdx)
-        End If
-        
-        If (Val(oForm.txVersion.Text) >= 80001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Australia", vIdx)
-        End If
-        
-        If (Val(oForm.txVersion.Text) >= 170001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("Japan", vIdx)
-        End If
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("Korea", vIdx)
-
-        Let .ListIndex = 0
-        
+        Call .AddItem("Austria", 0)
+        Call .AddItem("Belgium", 1)
+        Call .AddItem("Croatia", 2)
+        Call .AddItem("Czech Republic", 3)
+        Call .AddItem("Denmark", 4)
+        Call .AddItem("England", 5)
+        Call .AddItem("France", 6)
+        Call .AddItem("Germany", 7)
+        Call .AddItem("Greece", 8)
+        Call .AddItem("Hungary", 9)
+        Call .AddItem("Italy", 10)
+        Call .AddItem("Netherlands", 11)
+        Call .AddItem("Norway", 12)
+        Call .AddItem("Poland", 13)
+        Call .AddItem("Portugal", 14)
+        Call .AddItem("Romania", 15)
+        Call .AddItem("Russia", 16)
+        Call .AddItem("Scotland", 17)
+        Call .AddItem("Spain", 18)
+        Call .AddItem("Sweden", 19)
+        Call .AddItem("Switzerland", 20)
+        Call .AddItem("Turkey", 21)
+        Call .AddItem("Ukraine", 22)
+        Call .AddItem("Argentina", 23)
+        Call .AddItem("Bolivia", 24)
+        Call .AddItem("Brazil", 25)
+        Call .AddItem("Chile", 26)
+        Call .AddItem("Colombia", 27)
+        Call .AddItem("Ecuador", 28)
+        Call .AddItem("Paraguay", 29)
+        Call .AddItem("Peru", 30)
+        Call .AddItem("Uruguay", 31)
+        Call .AddItem("Venezuela", 32)
+        Call .AddItem("Canada", 33)
+        Call .AddItem("Mexico", 34)
+        Call .AddItem("United States", 35)
+        Call .AddItem("China PR", 36)
+        Call .AddItem("Japan", 37)
+        Call .AddItem("Saudi Arabia", 38)
+        Call .AddItem("Australia", 39)
+        Call .AddItem("Albania", 40)
+        Call .AddItem("Bosnia", 41)
+        Call .AddItem("Finland", 42)
+        Call .AddItem("North Macedonia", 43)
+        Call .AddItem("Iceland", 44)
+        Call .AddItem("Ireland", 45)
+        Call .AddItem("Northern Ireland", 46)
+        Call .AddItem("Slovakia", 47)
+        Call .AddItem("Slovenia", 48)
+        Call .AddItem("Wales", 49)
+        Call .AddItem("Serbia", 50)
+        Call .AddItem("Costa Rica", 51)
+        Call .AddItem("Jamaica", 52)
+        Call .AddItem("Panama", 53)
+        Call .AddItem("Algeria", 54)
+        Call .AddItem("Cameroon", 55)
+        Call .AddItem("Ivory Coast", 56)
+        Call .AddItem("Egypt", 57)
+        Call .AddItem("Ghana", 58)
+        Call .AddItem("Morocco", 59)
+        Call .AddItem("Nigeria", 60)
+        Call .AddItem("Senegal", 61)
+        Call .AddItem("Tunisia", 62)
+        Call .AddItem("Iran", 63)
+        Call .AddItem("Korea Republic", 64)
+        Call .AddItem("Qatar", 65)
+        Call .AddItem("United Arab Emirates", 66)
+        Call .AddItem("New Zealand", 67)
+        Let .ListIndex = 5
     End With
 
-
-    
     On Error GoTo 0
 
 Finish:
     On Error Resume Next
-    Set oClsGF = Nothing
-    Set oForm = Nothing
+    Set cgf = Nothing
+    Set frm = Nothing
     Exit Sub
 
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "LoadCountries")
+    Call cgf.DisplayErrMessage("clsForm", "LoadCountries")
     GoTo Finish
 
 End Sub
@@ -337,147 +236,103 @@ End Sub
 
 Private Sub LoadCountriesHidden()
 
-    Dim vIdx As Integer
-
-    Set oClsGF = New clsGlobalFunc
-    Set oForm = frSoFifa
+    Set cgf = New clsGlobalFunc
+    Set frm = frSoFifa
 
     On Error GoTo ErrHandler
 
-    With oForm.txCountryHidden
+    With frm.txCountryHidden
         Call .Clear
-        
-        Let vIdx = 0
-        Call .AddItem("type=national", vIdx)
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=52", vIdx)
-
-        If (Val(oForm.txVersion.Text) <> 150001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=54", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) >= 140001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=55", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=56", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) > 200028) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=53", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=57", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=58", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=59", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=60", vIdx)
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=0&na%5B%5D=61", vIdx)
-        End If
-
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=1&na%5B%5D=83", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=1&na%5B%5D=95", vIdx)
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=4", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=7", vIdx)
-
-        If (Val(oForm.txVersion.Text) >= 190001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=10", vIdx)
-        End If
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=12", vIdx)
-        Let vIdx = vIdx + 1
-       Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=13", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=14", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=18", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=21", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=22", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=27", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=34", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=36", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=37", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=38", vIdx)
-
-        If (Val(oForm.txVersion.Text) >= 200001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=39", vIdx)
-        End If
-
-        If (Val(oForm.txVersion.Text) >= 100001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=40", vIdx)
-        End If
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=42", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=46", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=47", vIdx)
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=48", vIdx)
-        
-        If (Val(oForm.txVersion.Text) >= 140001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=2&na%5B%5D=49", vIdx)
-        End If
-        
-        If (Val(oForm.txVersion.Text) >= 80001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=7&na%5B%5D=195", vIdx)
-        End If
-        
-        If (Val(oForm.txVersion.Text) >= 170001) Then
-            Let vIdx = vIdx + 1
-            Call .AddItem("type=club&ct%5B%5D=6&na%5B%5D=163", vIdx)
-        End If
-        
-        Let vIdx = vIdx + 1
-        Call .AddItem("type=club&ct%5B%5D=6&na%5B%5D=167", vIdx)
-
-        Let .ListIndex = oForm.txCountry.ListIndex
-
+        Call .AddItem("&na%5B%5D=4", 0)
+        Call .AddItem("&na%5B%5D=7", 1)
+        Call .AddItem("&na%5B%5D=10", 2)
+        Call .AddItem("&na%5B%5D=12", 3)
+        Call .AddItem("&na%5B%5D=13", 4)
+        Call .AddItem("&na%5B%5D=14", 5)
+        Call .AddItem("&na%5B%5D=18", 6)
+        Call .AddItem("&na%5B%5D=21", 7)
+        Call .AddItem("&na%5B%5D=22", 8)
+        Call .AddItem("&na%5B%5D=23", 9)
+        Call .AddItem("&na%5B%5D=27", 10)
+        Call .AddItem("&na%5B%5D=34", 11)
+        Call .AddItem("&na%5B%5D=36", 12)
+        Call .AddItem("&na%5B%5D=37", 13)
+        Call .AddItem("&na%5B%5D=38", 14)
+        Call .AddItem("&na%5B%5D=39", 15)
+        Call .AddItem("&na%5B%5D=40", 16)
+        Call .AddItem("&na%5B%5D=42", 17)
+        Call .AddItem("&na%5B%5D=45", 18)
+        Call .AddItem("&na%5B%5D=46", 19)
+        Call .AddItem("&na%5B%5D=47", 20)
+        Call .AddItem("&na%5B%5D=48", 21)
+        Call .AddItem("&na%5B%5D=49", 22)
+        Call .AddItem("&na%5B%5D=52", 23)
+        Call .AddItem("&na%5B%5D=53", 24)
+        Call .AddItem("&na%5B%5D=54", 25)
+        Call .AddItem("&na%5B%5D=55", 26)
+        Call .AddItem("&na%5B%5D=56", 27)
+        Call .AddItem("&na%5B%5D=57", 28)
+        Call .AddItem("&na%5B%5D=58", 29)
+        Call .AddItem("&na%5B%5D=59", 30)
+        Call .AddItem("&na%5B%5D=60", 31)
+        Call .AddItem("&na%5B%5D=61", 32)
+        Call .AddItem("&na%5B%5D=70", 33)
+        Call .AddItem("&na%5B%5D=83", 34)
+        Call .AddItem("&na%5B%5D=95", 35)
+        Call .AddItem("&na%5B%5D=155", 36)
+        Call .AddItem("&na%5B%5D=163", 37)
+        Call .AddItem("&na%5B%5D=183", 38)
+        Call .AddItem("&na%5B%5D=195", 39)
+        Call .AddItem("&na%5B%5D=1", 40)
+        Call .AddItem("&na%5B%5D=8", 41)
+        Call .AddItem("&na%5B%5D=17", 42)
+        Call .AddItem("&na%5B%5D=19", 43)
+        Call .AddItem("&na%5B%5D=24", 44)
+        Call .AddItem("&na%5B%5D=25", 45)
+        Call .AddItem("&na%5B%5D=35", 46)
+        Call .AddItem("&na%5B%5D=43", 47)
+        Call .AddItem("&na%5B%5D=44", 48)
+        Call .AddItem("&na%5B%5D=50", 49)
+        Call .AddItem("&na%5B%5D=51", 50)
+        Call .AddItem("&na%5B%5D=72", 51)
+        Call .AddItem("&na%5B%5D=82", 52)
+        Call .AddItem("&na%5B%5D=87", 53)
+        Call .AddItem("&na%5B%5D=97", 54)
+        Call .AddItem("&na%5B%5D=103", 55)
+        Call .AddItem("&na%5B%5D=108", 56)
+        Call .AddItem("&na%5B%5D=111", 57)
+        Call .AddItem("&na%5B%5D=117", 58)
+        Call .AddItem("&na%5B%5D=129", 59)
+        Call .AddItem("&na%5B%5D=133", 60)
+        Call .AddItem("&na%5B%5D=136", 61)
+        Call .AddItem("&na%5B%5D=145", 62)
+        Call .AddItem("&na%5B%5D=161", 63)
+        Call .AddItem("&na%5B%5D=167", 64)
+        Call .AddItem("&na%5B%5D=182", 65)
+        Call .AddItem("&na%5B%5D=190", 66)
+        Call .AddItem("&na%5B%5D=198", 67)
+        Let .ListIndex = frm.txCountry.ListIndex
     End With
 
     On Error GoTo 0
 
 Finish:
     On Error Resume Next
-    Set oClsGF = Nothing
-    Set oForm = Nothing
+    Set cgf = Nothing
+    Set frm = Nothing
     Exit Sub
 
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("clsForm", "LoadCountriesHidden")
+    Call cgf.DisplayErrMessage("clsForm", "LoadCountriesHidden")
     GoTo Finish
 
 End Sub
 
 
-Public Sub SearchClubsList()
+Public Sub SearchTeamsList()
     
     Set oClsSFL = New clsSoFifaLeagues
-    Call oClsSFL.SearchClubsList
+    Call oClsSFL.SearchTeamsList
     Set oClsSFL = Nothing
     
 End Sub
@@ -491,75 +346,57 @@ Public Sub SearchPlayersList()
     
 End Sub
 
+
+Public Sub GameChange()
+    
+    Set frm = frSoFifa
+    Let frm.txGameHidden.ListIndex = frm.txGame.ListIndex
+    Call LoadCountries
+    Call SearchVersionList
+    Call SearchTeamsList
+    Call SearchPlayersList
+    Set frm = Nothing
+    
+End Sub
+
+
 Public Sub VersionChange()
     
-    Set oForm = frSoFifa
-    
-    With oForm
-        Call .txCountry.Clear
-        Call .txCountryHidden.Clear
-        Call .txClub.Clear
-        Call .txClubHidden.Clear
-        Call .txPlayer.Clear
-        Call .txPlayerHidden.Clear
-    End With
-
-    Call LoadCountries
-    Call LoadCountriesHidden
-    Call SearchClubsList
+    Set frm = frSoFifa
+    Let frm.txVersionHidden.ListIndex = frm.txVersion.ListIndex
+    Call SearchTeamsList
     Call SearchPlayersList
-    
-    Set oForm = Nothing
+    Set frm = Nothing
     
 End Sub
 
 
 Public Sub CountryChange()
     
-    Set oForm = frSoFifa
-    
-    With oForm
-        Let .txCountryHidden.ListIndex = oForm.txCountry.ListIndex
-        Call .txClub.Clear
-        Call .txClubHidden.Clear
-        Call .txPlayer.Clear
-        Call .txPlayerHidden.Clear
-    End With
-
-    Call SearchClubsList
+    Set frm = frSoFifa
+    Let frm.txCountryHidden.ListIndex = frm.txCountry.ListIndex
+    Call SearchTeamsList
     Call SearchPlayersList
-    
-    Set oForm = Nothing
+    Set frm = Nothing
     
 End Sub
 
 
-Public Sub ClubChange()
+Public Sub TeamChange()
     
-    Set oForm = frSoFifa
-    
-    With oForm
-        Let .txClubHidden.ListIndex = oForm.txClub.ListIndex
-        Call .txPlayer.Clear
-        Call .txPlayerHidden.Clear
-    End With
-
+    Set frm = frSoFifa
+    Let frm.txTeamHidden.ListIndex = frm.txTeam.ListIndex
     Call SearchPlayersList
-    
-    Set oForm = Nothing
+    Set frm = Nothing
     
 End Sub
 
 
 Public Sub PlayerChange()
     
-    Set oForm = frSoFifa
-    
-    With oForm
-        Let .txPlayerHidden.ListIndex = oForm.txPlayer.ListIndex
-    End With
-    
-    Set oForm = Nothing
+    Set frm = frSoFifa
+    Let frm.txPlayerHidden.ListIndex = frm.listPlayer.ListIndex
+    Set frm = Nothing
     
 End Sub
 
@@ -571,4 +408,22 @@ Public Sub BtnSearchClick()
     Call BtnCopyClick
     Set oClsSF = Nothing
 
+End Sub
+
+
+Public Sub SearchGameList()
+
+    Set oClsSFL = New clsSoFifaLeagues
+    Call oClsSFL.SearchGameList
+    Set oClsSFL = Nothing
+    
+End Sub
+
+
+Public Sub SearchVersionList()
+
+    Set oClsSFL = New clsSoFifaLeagues
+    Call oClsSFL.SearchVersionList
+    Set oClsSFL = Nothing
+    
 End Sub

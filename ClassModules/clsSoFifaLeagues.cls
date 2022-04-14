@@ -14,259 +14,644 @@ Attribute VB_Exposed = False
 Option Explicit
 
 
-Private Const clubBaseUrl As String = "https://sofifa.com/team/{club}?r={version}&set=true"
-Private Const compBaseUrl As String = "https://sofifa.com/teams?{country}&r={version}&set=true"
-Private oDicClubs As Scripting.Dictionary
-Private oDicPlayers As Scripting.Dictionary
-Private oForm As frSoFifa
+Private Const baseUrl As String = "https://sofifa.com/"
 
 
-Public Sub SearchClubsList()
-
-    Dim oDoc As MSHTML.HTMLDocument
-    Dim vUrl As String
+Public Sub SearchTeamsList()
     
-    Set oForm = frSoFifa
-    Set oDoc = New MSHTML.HTMLDocument
+    Dim dic As Scripting.Dictionary
+    Dim doc As MSHTML.HTMLDocument
+    Dim url As String
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
     
-    Let vUrl = compBaseUrl
-    Let vUrl = Replace(vUrl, "{version}", oForm.txVersion.Text)
-    Let vUrl = Replace(vUrl, "{country}", oForm.txCountryHidden.Text)
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+    Set doc = New MSHTML.HTMLDocument
+    
+    Let url = baseUrl & "/teams/" & frm.txVersionHidden.Text
+    Let url = url & frm.txCountryHidden.Text
+    Let url = url & "&col=oa&sort=desc"
 
-    Set oDoc = GetDocHtml(vUrl)
-    Set oDicClubs = GetClubsList(oDoc)
-    Call LoadClubs(oDicClubs)
-    Call LoadClubsHidden(oDicClubs)
-
+    Set doc = GetDocHtml(url)
+    Set dic = GetTeamsList(doc)
+    Call LoadTeams(dic)
+    
+    On Error GoTo 0
+    
 Finish:
     On Error Resume Next
-    Set oDoc = Nothing
-    Set oDicClubs = Nothing
-    Set oForm = Nothing
+    Set doc = Nothing
+    Set dic = Nothing
+    Set frm = Nothing
+    Set cgf = Nothing
     Exit Sub
 
 ErrHandler:
-    Call MsgBox("Error", vbExclamation)
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "SearchTeamsList")
     GoTo Finish
 
 End Sub
 
 
 Public Sub SearchPlayersList()
-
-    Dim oDoc As MSHTML.HTMLDocument
-    Dim vUrl As String
-
-    Set oForm = frSoFifa
-    Set oDoc = New MSHTML.HTMLDocument
     
-    Let vUrl = clubBaseUrl
-    Let vUrl = Replace(vUrl, "{version}", oForm.txVersion.Text)
-    Let vUrl = Replace(vUrl, "{club}", oForm.txClubHidden.Text)
-
-    Set oDoc = GetDocHtml(vUrl)
-    Set oDicPlayers = GetPlayersList(oDoc)
-    Call LoadPlayers(oDicPlayers)
-    Call LoadPlayersHidden(oDicPlayers)
-
+    Dim dic As Scripting.Dictionary
+    Dim doc As MSHTML.HTMLDocument
+    Dim url As String
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+    Set doc = New MSHTML.HTMLDocument
+    
+    Select Case (frm.txTeamHidden.Text)
+        Case -1
+            Let url = baseUrl & "players/" & frm.txVersionHidden.Text
+            Let url = url & frm.txCountryHidden.Text
+            Let url = url & "&oal=" & frm.txMinOver.Value & "&oah=" & frm.txMaxOver.Value
+        Case Else
+            Let url = baseUrl & "team/@team@/" & frm.txVersionHidden
+            Let url = Replace(url, "@team@", frm.txTeamHidden.Text)
+    End Select
+    
+    Let url = url & "&col=oa&sort=desc&offset=0"
+    Set doc = GetDocHtml(url)
+    
+    Select Case (frm.txTeamHidden.Text)
+        Case -1
+            Set dic = GetPlayersListByNation(doc)
+        Case Else
+            Set dic = GetPlayersListByTeam(doc)
+    End Select
+    
+    Call LoadPlayers(dic)
+    
+    On Error GoTo 0
+    
 Finish:
     On Error Resume Next
-    Set oDoc = Nothing
-    Set oDicPlayers = Nothing
-    Set oForm = Nothing
+    Set doc = Nothing
+    Set dic = Nothing
+    Set frm = Nothing
+    Set cgf = Nothing
     Exit Sub
 
 ErrHandler:
-    Call MsgBox("Error", vbExclamation)
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "SearchPlayersList")
     GoTo Finish
 
 End Sub
 
 
-Private Function GetDocHtml(ByVal pUrl As String) As MSHTML.HTMLDocument
+Private Function GetDocHtml(ByVal url As String) As MSHTML.HTMLDocument
 
-    Dim oIe As MSXML2.XMLHTTP60
-    Dim oDoc As MSHTML.HTMLDocument
-    Set oIe = New MSXML2.XMLHTTP60
-    Set oDoc = New MSHTML.HTMLDocument
-
+    Dim xml As MSXML2.XMLHTTP60
+    Dim doc As MSHTML.HTMLDocument
+    Dim cgf As New clsGlobalFunc
+    
     On Error GoTo ErrHandler
+    
+    Set xml = New MSXML2.XMLHTTP60
+    Set doc = New MSHTML.HTMLDocument
 
-    With oIe
-        Call .Open("GET", pUrl, False)
+    With xml
+        Call .Open("GET", url, False)
         Call .send
         Do While (.readyState <> 4): DoEvents: Loop
         If (.Status <> 200) Then GoTo ErrHandler
     End With
 
-    Let oDoc.body.innerHTML = oIe.responseText
+    Let doc.body.innerHTML = xml.responseText
 
-    Set GetDocHtml = oDoc
+    Set GetDocHtml = doc
 
     On Error GoTo 0
-
+    
 Finish:
     On Error Resume Next
-    Set oIe = Nothing
-    Set oDoc = Nothing
+    Set doc = Nothing
+    Set xml = Nothing
+    Set cgf = Nothing
     Exit Function
 
 ErrHandler:
-    Call MsgBox(oIe.statusText, vbExclamation, oIe.Status)
+        Call cgf.DisplayErrMessage("SoFifaLeagues", "GetDocHtml")
     GoTo Finish
 
 End Function
 
 
-Private Function GetClubsList(ByVal pDoc As MSHTML.HTMLDocument) As Scripting.Dictionary
+Private Function GetTeamsList(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
 
-    Dim oDic As Scripting.Dictionary
-    Dim vMax As Integer
-    Dim vCount As Integer
-    Dim vAux As String
-    Dim vId As Double
-    Set oDic = New Scripting.Dictionary
-
-    Let vMax = pDoc.querySelectorAll(".card .col-name-wide a").length - 2
-
-    For vCount = 0 To vMax Step 2
-        With pDoc.querySelectorAll(".card .col-name-wide a")
-            Let vId = 0
-            Let vId = Split(.Item(vCount).href, "/")(2)
-            Let vAux = vbNullString
-            Let vAux = .Item(vCount).innerText
-        End With
-        Call oDic.Add(vId, vAux)
-    Next vCount
-
-    Set GetClubsList = oDic
-
-    Set oDic = Nothing
-
-End Function
-
-
-Private Function GetPlayersList(ByVal pDoc As MSHTML.HTMLDocument) As Scripting.Dictionary
-
-    Dim oDic As Scripting.Dictionary
-    Dim vMax As Integer
-    Dim vCount As Integer
-    Dim vAux As String
-    Dim vId As Double
-
-    Set oDic = New Scripting.Dictionary
-    Let vMax = pDoc.querySelectorAll("tbody > tr > td.col-name").length - 1
-
-    For vCount = 0 To vMax Step 2
-        With pDoc.querySelectorAll("tbody > tr > td.col-name")
-            Let vAux = vbNullString
-            Let vAux = vAux & Trim(Split(Split(.Item(vCount + 1).innerText, vbCrLf)(0))(1))
-            Let vAux = vAux & Space(1) & Trim(Split(.Item(vCount).innerText, vbCrLf)(1))
-            Let vAux = vAux & Space(1) & Trim(Split(.Item(vCount).innerText, vbCrLf)(0))
-            Let vId = 0
-            Let vId = Val(Split(.Item(vCount).firstChild.href, "/")(2))
-        End With
-        Call oDic.Add(vId, vAux)
-    Next vCount
-
-    Set GetPlayersList = oDic
-
-    Set oDic = Nothing
-
-End Function
-
-
-Private Sub LoadClubs(ByVal pDic As Scripting.Dictionary)
+    Dim dic As Scripting.Dictionary
+    Dim i As Integer
+    Dim max As Integer
+    Dim id As Double
+    Dim aux As String
+    Dim cgf As New clsGlobalFunc
     
-    Dim vCount As Integer
-
-    Set oForm = frSoFifa
-
-    If (pDic.Count = 0) Then
-        Let oForm.txClub.ListIndex = -1
-        GoTo Finish
-    End If
-    
-    With oForm.txClub
-        Call .Clear
-        For vCount = 0 To pDic.Count
-            If (vCount = pDic.Count) Then Exit For
-            Call .AddItem(pDic.Items(vCount), vCount)
-        Next vCount
-        Let .ListIndex = 0
-    End With
-
-Finish:
-    Set oForm = Nothing
-    Set pDic = Nothing
-
-End Sub
-
-
-Private Sub LoadClubsHidden(ByVal pDic As Scripting.Dictionary)
-    
-    Dim vCount As Integer
-
-    Set oForm = frSoFifa
-    
-    If (pDic.Count = 0) Then
-        Let oForm.txClubHidden.ListIndex = oForm.txClub.ListIndex
-        GoTo Finish
-    End If
-    
-    With oForm.txClubHidden
-        Call .Clear
-        For vCount = 0 To pDic.Count
-            If (vCount = pDic.Count) Then Exit For
-            Call .AddItem(pDic.Keys(vCount), vCount)
-        Next vCount
-        Let .ListIndex = oForm.txClub.ListIndex
-    End With
-
-Finish:
-    Set oForm = Nothing
-    Set pDic = Nothing
-
-End Sub
-
-
-Private Sub LoadPlayers(ByVal pDic As Scripting.Dictionary)
-
-    Dim vCount As Integer
-
-    Set oForm = frSoFifa
-
-    With oForm.txPlayer
-        Call .Clear
-        For vCount = 0 To pDic.Count
-            If (vCount = pDic.Count) Then Exit For
-            Call .AddItem(pDic.Items(vCount), vCount)
-        Next vCount
-        Let .ListIndex = 0
-    End With
-
-    Set oForm = Nothing
-    Set pDic = Nothing
-
-End Sub
-Private Sub LoadPlayersHidden(ByVal pDic As Scripting.Dictionary)
-
-    Dim vCount As Integer
-
-    Set oForm = frSoFifa
-
-    With oForm.txPlayerHidden
-        Call .Clear
+    On Error GoTo ErrHandler
         
-        For vCount = 0 To pDic.Count
-            If (vCount = pDic.Count) Then Exit For
-            Call .AddItem(pDic.Keys(vCount), vCount)
-        Next vCount
-        Let .ListIndex = oForm.txPlayer.ListIndex
-    End With
+    Set dic = New Scripting.Dictionary
 
-    Set oForm = Nothing
-    Set pDic = Nothing
+    Let max = doc.querySelectorAll(".card .col-name-wide a").length - 2
+    
+    Call dic.Add(-1, "None (Player By Nation)")
+    
+    For i = 0 To max Step 2
+        With doc.querySelectorAll(".card .col-name-wide a")
+            Let id = 0
+            Let id = Split(.Item(i).href, "/")(2)
+            Let aux = vbNullString
+            Let aux = .Item(i).innerText
+        End With
+        Call dic.Add(id, aux)
+    Next i
+
+    Set GetTeamsList = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetTeamsList")
+    GoTo Finish
+
+End Function
+
+
+Private Function FixPlayerName(ByVal Name As String) As String
+
+    Dim arr As Variant
+    Let arr = Split(Name, "-")
+    
+    Let FixPlayerName = arr(LBound(arr)) & Chr(32) & arr(UBound(arr))
+    Let FixPlayerName = StrConv(FixPlayerName, vbProperCase)
+
+End Function
+
+
+Private Function GetPlayersListByNation(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
+
+    Dim dic As Scripting.Dictionary
+    Dim chd As MSHTML.IHTMLDOMChildrenCollection
+    Dim i As Integer
+    Dim aux As String
+    Dim info As String
+    Dim id As Double
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+        
+    Set dic = New Scripting.Dictionary
+
+GetPlayers:
+    Set chd = doc.querySelectorAll("tbody tr")
+    Do While i < chd.length
+        Let aux = vbNullString
+        Let info = vbNullString
+        With chd.Item(i)
+            Let aux = Trim(.children.Item(3).children.Item(0).innerText)
+            Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(.children.Item(1).children.Item(2).innerText)
+            Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(.children.Item(1).children.Item(0).innerText)
+'            Let aux = Split(.children.Item(1).children.Item(0).href, "/")(3)
+'            Let aux = FixPlayerName(aux)
+            Let info = info & aux & String(29 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(Split(.children.Item(5).innerText, vbCrLf)(0))
+            Let info = info & aux
+            Let id = Val(Split(.children.Item(1).children.Item(0).href, "/")(2))
+        End With
+        Call dic.Add(id, info)
+        Let i = i + 1
+    Loop
+    
+    Set chd = doc.querySelectorAll(".pagination .bp3-icon-chevron-right")
+    If (chd.length > 0) Then
+        Let aux = Replace(chd.Item(0).parentElement.href, "about:", "https://sofifa.com")
+        Set doc = GetDocHtml(aux)
+        Let i = 0
+        GoTo GetPlayers
+    End If
+
+    Set GetPlayersListByNation = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetPlayersList")
+    GoTo Finish
+
+End Function
+
+
+Private Function GetPlayersListByTeam(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
+
+    Dim dic As Scripting.Dictionary
+    Dim chd As MSHTML.IHTMLDOMChildrenCollection
+    Dim i As Integer
+    Dim aux As String
+    Dim info As String
+    Dim id As Double
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+        
+    Set dic = New Scripting.Dictionary
+    
+    Set chd = doc.querySelectorAll("tbody tr")
+
+    Do While i < chd.length
+        Let aux = vbNullString
+        Let info = vbNullString
+        With chd.Item(i)
+            Let aux = Trim(.children.Item(3).children.Item(0).innerText)
+            Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(.children.Item(1).children.Item(2).innerText)
+            Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(.children.Item(1).children.Item(0).innerText)
+'            Let aux = Split(.children.Item(1).children.Item(0).href, "/")(3)
+'            Let aux = FixPlayerName(aux)
+            Let info = info & aux & String(29 - Len(aux), Chr(32)) & Chr(9)
+            Let aux = Trim(.children.Item(5).children.Item(0).childNodes.Item(1).Data)
+            Let info = info & aux
+            Let id = Val(Split(.children.Item(1).children.Item(0).href, "/")(2))
+        End With
+        Call dic.Add(id, info)
+        Let i = i + 1
+    Loop
+
+    Set GetPlayersListByTeam = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetPlayersList")
+    GoTo Finish
+
+End Function
+
+
+Private Sub LoadTeams(ByVal dic As Scripting.Dictionary)
+    
+    Dim i As Integer
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+
+    Call frm.txTeam.Clear
+    Call frm.txTeamHidden.Clear
+    
+    If (dic.Count = 0) Then
+        Let frm.txTeam.ListIndex = -1
+        Let frm.txTeamHidden.ListIndex = -1
+        GoTo Finish
+    End If
+    
+    Do While i < dic.Count
+        Call frm.txTeam.AddItem(dic.Items(i), i)
+        Call frm.txTeamHidden.AddItem(dic.Keys(i), i)
+        Let i = i + 1
+    Loop
+    
+    Let frm.txTeam.ListIndex = 0
+    Let frm.txTeamHidden.ListIndex = frm.txTeam.ListIndex
+    
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set frm = Nothing
+    Set dic = Nothing
+    Set cgf = Nothing
+    Exit Sub
+    
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "LoadTeams")
+    GoTo Finish
 
 End Sub
 
+
+
+
+Private Sub LoadPlayers(ByVal dic As Scripting.Dictionary)
+
+    Dim i As Integer
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+
+    Call frm.listPlayer.Clear
+    Call frm.txPlayerHidden.Clear
+
+    If (dic.Count = 0) Then
+        Let frm.listPlayer.ListIndex = -1
+        Let frm.txPlayerHidden.ListIndex = -1
+        GoTo Finish
+    End If
+
+    Do While i < dic.Count
+        Call frm.listPlayer.AddItem(dic.Items(i), i)
+        Call frm.txPlayerHidden.AddItem(dic.Keys(i), i)
+        Let i = i + 1
+    Loop
+        
+    Let frm.listPlayer.ListIndex = 0
+    Let frm.txPlayerHidden.ListIndex = frm.listPlayer.ListIndex
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set frm = Nothing
+    Set dic = Nothing
+    Set cgf = Nothing
+    Exit Sub
+    
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "LoadPlayers")
+    GoTo Finish
+
+End Sub
+
+
+
+
+
+Private Function GetGamesList(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
+
+    Dim dic As Scripting.Dictionary
+    Dim chd As MSHTML.IHTMLDOMChildrenCollection
+    Dim i As Integer
+    Dim aux As String
+    Dim id As Double
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+        
+    Set dic = New Scripting.Dictionary
+    
+    Set chd = doc.querySelectorAll(".dropdown")
+    
+    If (chd.length = 0) Then GoTo Finish
+    
+    Let i = 0
+    
+    Do While i < chd.Item(1).children.Item(1).children.length
+        With chd.Item(1).children.Item(1).children.Item(i)
+            Call dic.Add(.innerText, Replace(.href, "about:/", vbNullString))
+        End With
+        Let i = i + 1
+    Loop
+    
+    Set GetGamesList = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set chd = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetGamesList")
+    GoTo Finish
+
+End Function
+
+
+Private Function GetVersionsList(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
+
+    Dim dic As Scripting.Dictionary
+    Dim chd As MSHTML.IHTMLDOMChildrenCollection
+    Dim i As Integer
+    Dim aux As String
+    Dim id As Double
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+        
+    Set dic = New Scripting.Dictionary
+    
+    Set chd = doc.querySelectorAll(".dropdown")
+    
+    If (chd.length = 0) Then GoTo Finish
+    
+    Let i = 0
+    
+    Do While i < chd.Item(2).children.Item(1).children.length
+        With chd.Item(2).children.Item(1).children.Item(i)
+            Call dic.Add(.innerText, Replace(.href, "about:/", vbNullString))
+        End With
+        Let i = i + 1
+    Loop
+
+    Set GetVersionsList = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set chd = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetVersionsList")
+    GoTo Finish
+
+End Function
+
+
+Private Sub LoadGames(ByVal dic As Scripting.Dictionary)
+    
+    Dim i As Integer
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+
+    Call frm.txGame.Clear
+    Call frm.txGameHidden.Clear
+
+    If (dic.Count = 0) Then
+        Let frm.txGame.ListIndex = -1
+        Let frm.txGameHidden.ListIndex = frm.txGameHidden.ListIndex
+        GoTo Finish
+    End If
+    
+    Do While i < dic.Count
+        Call frm.txGame.AddItem(dic.Keys(i), i)
+        Call frm.txGameHidden.AddItem(dic.Items(i), i)
+        Let i = i + 1
+    Loop
+    
+    Let frm.txGame.ListIndex = 0
+    Let frm.txGameHidden.ListIndex = frm.txGame.ListIndex
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set frm = Nothing
+    Set dic = Nothing
+    Set cgf = Nothing
+    Exit Sub
+    
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "LoadGames")
+    GoTo Finish
+
+End Sub
+
+
+Private Sub LoadVersions(ByVal dic As Scripting.Dictionary)
+    
+    Dim i As Integer
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+
+    If (dic.Count = 0) Then
+        Let frm.txVersion.ListIndex = -1
+        Let frm.txVersionHidden.ListIndex = frm.txVersion.ListIndex
+        GoTo Finish
+    End If
+    
+    Call frm.txVersion.Clear
+    Call frm.txVersionHidden.Clear
+    
+    Do While i < dic.Count
+        Call frm.txVersion.AddItem(dic.Keys(i), i)
+        Call frm.txVersionHidden.AddItem(dic.Items(i), i)
+        Let i = i + 1
+    Loop
+    
+    Let frm.txVersion.ListIndex = 0
+    Let frm.txVersionHidden.ListIndex = frm.txVersion.ListIndex
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set frm = Nothing
+    Set dic = Nothing
+    Set cgf = Nothing
+    Exit Sub
+    
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "LoadVersions")
+    GoTo Finish
+
+End Sub
+
+
+Public Sub SearchGameList()
+    
+    Dim dic As Scripting.Dictionary
+    Dim doc As MSHTML.HTMLDocument
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+    Set doc = New MSHTML.HTMLDocument
+
+    Set doc = GetDocHtml(baseUrl)
+    Set dic = GetGamesList(doc)
+    Call LoadGames(dic)
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set doc = Nothing
+    Set dic = Nothing
+    Set frm = Nothing
+    Set cgf = Nothing
+    Exit Sub
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "SearchTeamsList")
+    GoTo Finish
+
+End Sub
+
+
+Public Sub SearchVersionList()
+    
+    Dim dic As Scripting.Dictionary
+    Dim doc As MSHTML.HTMLDocument
+    Dim url As String
+    Dim frm As frSoFifa
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+    
+    Set frm = frSoFifa
+    Set doc = New MSHTML.HTMLDocument
+    
+    Let url = baseUrl & frm.txGameHidden.Text
+
+    Set doc = GetDocHtml(url)
+    Set dic = GetVersionsList(doc)
+    Call LoadVersions(dic)
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set doc = Nothing
+    Set dic = Nothing
+    Set frm = Nothing
+    Set cgf = Nothing
+    Exit Sub
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "SearchVersionList")
+    GoTo Finish
+
+End Sub

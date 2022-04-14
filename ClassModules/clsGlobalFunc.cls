@@ -85,51 +85,76 @@ SetVariables:
     Let mRgx.MultiLine = True
 
 ReplaceDiacritics:
-    Let mRgx.Pattern = "[‡·‰‚„]"
+    Let mRgx.Pattern = "[‡·‰‚„a‚]"
     Let pTextString = mRgx.Replace(pTextString, "a")
-    Let mRgx.Pattern = "[¿¡ƒ¬√]"
+    Let mRgx.Pattern = "[¿¡ƒ¬√A¬]"
     Let pTextString = mRgx.Replace(pTextString, "A")
-    Let mRgx.Pattern = "[ËÈÎÍ]"
+    Let mRgx.Pattern = "[ËÈÎÍe]"
     Let pTextString = mRgx.Replace(pTextString, "e")
-    Let mRgx.Pattern = "[»…À ]"
+    Let mRgx.Pattern = "[»…À E]"
     Let pTextString = mRgx.Replace(pTextString, "E")
     Let mRgx.Pattern = "[ÏÌÔÓ]"
-    Let pTextString = mRgx.Replace(pTextString, "mCount")
+    Let pTextString = mRgx.Replace(pTextString, "i")
     Let mRgx.Pattern = "[ÃÕœŒ]"
     Let pTextString = mRgx.Replace(pTextString, "I")
     Let mRgx.Pattern = "[ÚÛˆıÙ]"
     Let pTextString = mRgx.Replace(pTextString, "o")
     Let mRgx.Pattern = "[“”÷’‘]"
     Let pTextString = mRgx.Replace(pTextString, "O")
-    Let mRgx.Pattern = "[˘˙¸˚]"
+    Let mRgx.Pattern = "[˘˙¸˚u]"
     Let pTextString = mRgx.Replace(pTextString, "u")
-    Let mRgx.Pattern = "[Ÿ⁄‹€]"
+    Let mRgx.Pattern = "[Ÿ⁄‹€U]"
     Let pTextString = mRgx.Replace(pTextString, "U")
-    Let mRgx.Pattern = "[Á]"
+    Let mRgx.Pattern = "[Ác]"
     Let pTextString = mRgx.Replace(pTextString, "c")
-    Let mRgx.Pattern = "[«]"
+    Let mRgx.Pattern = "[«C]"
     Let pTextString = mRgx.Replace(pTextString, "C")
     Let mRgx.Pattern = "[Ò]"
     Let pTextString = mRgx.Replace(pTextString, "n")
     Let mRgx.Pattern = "[—]"
     Let pTextString = mRgx.Replace(pTextString, "N")
-
+    Let mRgx.Pattern = "[?s]"
+    Let pTextString = mRgx.Replace(pTextString, "s")
+    Let mRgx.Pattern = "[?S]"
+    Let pTextString = mRgx.Replace(pTextString, "S")
+    Let mRgx.Pattern = "[?tt]"
+    Let pTextString = mRgx.Replace(pTextString, "t")
+    Let mRgx.Pattern = "[?TT]"
+    Let pTextString = mRgx.Replace(pTextString, "T")
+    Let mRgx.Pattern = "[û]"
+    Let pTextString = mRgx.Replace(pTextString, "z")
+    Let mRgx.Pattern = "[é]"
+    Let pTextString = mRgx.Replace(pTextString, "Z")
+    Let mRgx.Pattern = "[r]"
+    Let pTextString = mRgx.Replace(pTextString, "r")
+    Let mRgx.Pattern = "[R]"
+    Let pTextString = mRgx.Replace(pTextString, "R")
+    Let mRgx.Pattern = "[˝]"
+    Let pTextString = mRgx.Replace(pTextString, "y")
+    Let mRgx.Pattern = "[›]"
+    Let pTextString = mRgx.Replace(pTextString, "Y")
+    Let mRgx.Pattern = "[d]"
+    Let pTextString = mRgx.Replace(pTextString, "d")
+    Let mRgx.Pattern = "[D]"
+    Let pTextString = mRgx.Replace(pTextString, "D")
+    
 ReplaceMultipleSpaces:
     Let mRgx.Pattern = "\s{2,}"
     Let pTextString = mRgx.Replace(pTextString, Space(1))
+    
 
-ReplaceSymbols:
-    Let mRgx.Pattern = "[^a-zA-Z0-9\s]"
-    Let pTextString = mRgx.Replace(pTextString, vbNullString)
-
-ReplaceNumbers:
-    If (Not pReplaceNumber) Then GoTo TrimText
-    Let mRgx.Pattern = "[^a-zA-Z\s]"
-    Let pTextString = mRgx.Replace(pTextString, vbNullString)
+'ReplaceSymbols:
+'    Let mRgx.Pattern = "[^a-zA-Z0-9\s]"
+'    Let pTextString = mRgx.Replace(pTextString, vbNullString)
+'
+'ReplaceNumbers:
+'    If (Not pReplaceNumber) Then GoTo TrimText
+'    Let mRgx.Pattern = "[^a-zA-Z\s]"
+'    Let pTextString = mRgx.Replace(pTextString, vbNullString)
 
 TrimText:
     Let RegexFormat = Trim(pTextString)
-    Let RegexFormat = StrConv(RegexFormat, vbUpperCase)
+    Let RegexFormat = StrConv(RegexFormat, vbProperCase)
     
 Finish:
     On Error Resume Next

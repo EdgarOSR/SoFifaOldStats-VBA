@@ -6,14 +6,14 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "clsSoFifaSkill"
+Attribute VB_Name = "clsOldStatsSkill"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Private oClsGF As New clsGlobalFunc
+Private cgf As New clsGlobalFunc
 Private oDic As Scripting.Dictionary
 Private mCrossing As String
 Private mFinishing As String
@@ -88,7 +88,7 @@ End Property
 Public Property Get GetDictionary() As Scripting.Dictionary
 Variables:
 Set oDic = New Scripting.Dictionary
-Set oClsGF = New clsGlobalFunc
+Set cgf = New clsGlobalFunc
 
 AddItems:
     On Error GoTo ErrHandler
@@ -139,11 +139,11 @@ ReturningValue:
 Finish:
     On Error Resume Next
     Set oDic = Nothing
-    Set oClsGF = Nothing
+    Set cgf = Nothing
     Exit Property
     
 ErrHandler:
-    Call oClsGF.DisplayErrMessage("SoFifaSkill", "GetDictionary")
+    Call cgf.DisplayErrMessage("SoFifaSkill", "GetDictionary")
     GoTo Finish
 
 End Property
@@ -289,18 +289,16 @@ End Property
 
 
 Public Property Let Traits(ByVal vNewValue As Variant)
-    
     If (vNewValue = vbNullString) Then
         Let mTraits = "[]"
         Exit Property
     End If
-        
-    Dim vKey As Variant
+    Dim key As Variant
     Let mTraits = Chr(91)
-    For vKey = 1 To UBound(Split(vNewValue, vbCrLf))
-        Let mTraits = mTraits & Chr(34) & Trim(Split(vNewValue, vbCrLf)(vKey)) & Chr(34) & Chr(44)
-    Next vKey
+    For key = 1 To UBound(Split(vNewValue, vbCrLf))
+        Let mTraits = mTraits & Chr(34) & Trim(Split(vNewValue, vbCrLf)(key)) & Chr(34) & Chr(44)
+    Next key
     Let mTraits = Left(mTraits, Len(mTraits) - 1) & Chr(93)
-    Set vKey = Nothing
+    Set key = Nothing
 End Property
 

@@ -167,6 +167,9 @@ DocProject/Help/Html2
 DocProject/Help/html
 Exe/*
 Images/*
+Forms/*
+*/*.vbw
+*/*.vbp
 
 # Click-Once directory
 publish/

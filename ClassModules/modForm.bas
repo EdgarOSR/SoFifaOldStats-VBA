@@ -41,18 +41,12 @@ Public Sub FormActivate()
 End Sub
 
 
-'Public Sub SearchClubsList()
-'    Set oCls = New clsForm
-'    Call oCls.SearchClubsList
-'    Set oCls = Nothing
-'End Sub
-'
-'
-'Public Sub SearchPlayersList()
-'    Set oCls = New clsForm
-'    Call oCls.SearchPlayersList
-'    Set oCls = Nothing
-'End Sub
+Public Sub GameChange()
+    Set oCls = New clsForm
+    Call oCls.GameChange
+    Set oCls = Nothing
+End Sub
+
 
 Public Sub VersionChange()
     Set oCls = New clsForm
@@ -68,9 +62,9 @@ Public Sub CountryChange()
 End Sub
 
 
-Public Sub ClubChange()
+Public Sub TeamChange()
     Set oCls = New clsForm
-    Call oCls.ClubChange
+    Call oCls.TeamChange
     Set oCls = Nothing
 End Sub
 

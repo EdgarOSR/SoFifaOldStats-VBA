@@ -73,17 +73,29 @@ Public Sub SearchPlayersList()
             Let url = baseUrl & "players/" & frm.txVersionHidden.Text
             Let url = url & frm.txCountryHidden.Text
             Let url = url & "&oal=" & frm.txMinOver.Value & "&oah=" & frm.txMaxOver.Value
+            If (frm.txType.Text <> "All") Then
+                Let url = url & "&type=" & LCase(frm.txType.Text)
+            End If
         Case Else
             Let url = baseUrl & "team/@team@/" & frm.txVersionHidden
             Let url = Replace(url, "@team@", frm.txTeamHidden.Text)
     End Select
     
-    Let url = url & "&col=oa&sort=desc&offset=0"
+    If (frm.txOrderClub = True) Then
+        Let url = url & "&col=tm&sort=asc&offset=0"
+    Else
+        Let url = url & "&col=oa&sort=desc&offset=0"
+    End If
+    
     Set doc = GetDocHtml(url)
     
     Select Case (frm.txTeamHidden.Text)
         Case -1
-            Set dic = GetPlayersListByNation(doc)
+            If (frm.txType.Text = "Updated") Then
+                Set dic = GetPlayersListUpdatedByNation(doc)
+            Else
+                Set dic = GetPlayersListByNation(doc)
+            End If
         Case Else
             Set dic = GetPlayersListByTeam(doc)
     End Select
@@ -226,14 +238,12 @@ GetPlayers:
             Let aux = Trim(.children.Item(1).children.Item(2).innerText)
             Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
             Let aux = Trim(.children.Item(1).children.Item(0).innerText)
-'            Let aux = Split(.children.Item(1).children.Item(0).href, "/")(3)
-'            Let aux = FixPlayerName(aux)
             Let info = info & aux & String(29 - Len(aux), Chr(32)) & Chr(9)
             Let aux = Trim(Split(.children.Item(5).innerText, vbCrLf)(0))
             Let info = info & aux
             Let id = Val(Split(.children.Item(1).children.Item(0).href, "/")(2))
+            Call dic.Add(id, info)
         End With
-        Call dic.Add(id, info)
         Let i = i + 1
     Loop
     
@@ -246,6 +256,72 @@ GetPlayers:
     End If
 
     Set GetPlayersListByNation = dic
+
+    On Error GoTo 0
+    
+Finish:
+    On Error Resume Next
+    Set dic = Nothing
+    Set doc = Nothing
+    Set cgf = Nothing
+    Exit Function
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("SoFifaLeagues", "GetPlayersList")
+    GoTo Finish
+
+End Function
+
+
+Private Function GetPlayersListUpdatedByNation(ByVal doc As MSHTML.HTMLDocument) As Scripting.Dictionary
+
+    Dim dic As Scripting.Dictionary
+    Dim chd As MSHTML.IHTMLDOMChildrenCollection
+    Dim i As Integer
+    Dim aux As String
+    Dim info As String
+    Dim id As Double
+    Dim cgf As New clsGlobalFunc
+    
+    On Error GoTo ErrHandler
+        
+    Set dic = New Scripting.Dictionary
+
+GetPlayers:
+    Set chd = doc.querySelectorAll("tbody tr")
+    Do While i < chd.length
+        Let aux = vbNullString
+        Let info = vbNullString
+        On Error Resume Next
+            With chd.Item(i)
+                Let aux = Trim(.children.Item(0).innerText)
+                Let aux = Trim(Split(Split(aux, Chr(13))(2))(0))
+                If (IsNumeric(aux)) Then
+                    Let aux = Trim(.children.Item(3).children.Item(0).innerText)
+                    Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+                    Let aux = Trim(.children.Item(1).children.Item(2).innerText)
+                    Let info = info & aux & String(3 - Len(aux), Chr(32)) & Chr(9)
+                    Let aux = Trim(.children.Item(1).children.Item(0).innerText)
+                    Let info = info & aux & String(29 - Len(aux), Chr(32)) & Chr(9)
+                    Let aux = Trim(Split(.children.Item(5).innerText, vbCrLf)(0))
+                    Let info = info & aux
+                    Let id = Val(Split(.children.Item(1).children.Item(0).href, "/")(2))
+                    Call dic.Add(id, info)
+                End If
+            End With
+        On Error GoTo 0
+        Let i = i + 1
+    Loop
+    
+    Set chd = doc.querySelectorAll(".pagination .bp3-icon-chevron-right")
+    If (chd.length > 0) Then
+        Let aux = Replace(chd.Item(0).parentElement.href, "about:", "https://sofifa.com")
+        Set doc = GetDocHtml(aux)
+        Let i = 0
+        GoTo GetPlayers
+    End If
+
+    Set GetPlayersListUpdatedByNation = dic
 
     On Error GoTo 0
     

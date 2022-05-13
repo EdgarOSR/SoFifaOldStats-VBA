@@ -56,10 +56,12 @@ End Function
 Public Sub BtnCopyClick()
     
     Dim oDto As VB.Clipboard
+    Dim sb As MSComctlLib.StatusBar
     
     Set cgf = New clsGlobalFunc
     Set oDto = VB.Clipboard
     Set frm = frSoFifa
+    Set sb = frm.btStatusBar
     
     On Error GoTo ErrHandler
     
@@ -68,7 +70,7 @@ Public Sub BtnCopyClick()
         Call oDto.Clear
         Let .txStatsToCopy.Text = Replace(.txStatsToCopy.Text, "?", "*")
         Call oDto.SetText(.txStatsToCopy.Text)
-        Call MsgBox("Paste it in PES6 Editor", vbInformation)
+        Let sb.Panels(1).Text = "Paste the stats in PES6 Editor."
     End With
     
     On Error GoTo 0
@@ -77,6 +79,7 @@ Finish:
     On Error Resume Next
     Set cgf = Nothing
     Set frm = Nothing
+    Set sb = Nothing
     Set oDto = Nothing
     Exit Sub
 
@@ -133,6 +136,7 @@ Public Sub FormActivate()
     Call SearchVersionList
     Call LoadCountries
     Call LoadCountriesHidden
+    Call LoadTypes
     Call SearchTeamsList
     Call SearchPlayersList
 
@@ -141,9 +145,11 @@ End Sub
 
 Private Sub LoadCountries()
 
+    Dim i As Integer
+    Let i = 0
     Set cgf = New clsGlobalFunc
     Set frm = frSoFifa
-
+    
     On Error GoTo ErrHandler
 
     With frm.txCountry
@@ -189,33 +195,54 @@ Private Sub LoadCountries()
         Call .AddItem("Saudi Arabia", 38)
         Call .AddItem("Australia", 39)
         Call .AddItem("Albania", 40)
-        Call .AddItem("Bosnia", 41)
-        Call .AddItem("Finland", 42)
-        Call .AddItem("North Macedonia", 43)
-        Call .AddItem("Iceland", 44)
-        Call .AddItem("Ireland", 45)
-        Call .AddItem("Northern Ireland", 46)
-        Call .AddItem("Slovakia", 47)
-        Call .AddItem("Slovenia", 48)
-        Call .AddItem("Wales", 49)
-        Call .AddItem("Serbia", 50)
-        Call .AddItem("Costa Rica", 51)
-        Call .AddItem("Jamaica", 52)
-        Call .AddItem("Panama", 53)
-        Call .AddItem("Algeria", 54)
-        Call .AddItem("Cameroon", 55)
-        Call .AddItem("Ivory Coast", 56)
-        Call .AddItem("Egypt", 57)
-        Call .AddItem("Ghana", 58)
-        Call .AddItem("Morocco", 59)
-        Call .AddItem("Nigeria", 60)
-        Call .AddItem("Senegal", 61)
-        Call .AddItem("Tunisia", 62)
-        Call .AddItem("Iran", 63)
-        Call .AddItem("Korea Republic", 64)
-        Call .AddItem("Qatar", 65)
-        Call .AddItem("United Arab Emirates", 66)
-        Call .AddItem("New Zealand", 67)
+        Call .AddItem("Armenia", 41)
+        Call .AddItem("Belarus", 42)
+        Call .AddItem("Bosnia", 43)
+        Call .AddItem("Bulgaria", 44)
+        Call .AddItem("Cyprus", 45)
+        Call .AddItem("Finland", 46)
+        Call .AddItem("Georgia", 47)
+        Call .AddItem("Kosovo", 48)
+        Call .AddItem("Latvia", 49)
+        Call .AddItem("Montenegro", 50)
+        Call .AddItem("North Macedonia", 51)
+        Call .AddItem("Iceland", 52)
+        Call .AddItem("Ireland", 53)
+        Call .AddItem("Northern Ireland", 54)
+        Call .AddItem("Slovakia", 55)
+        Call .AddItem("Slovenia", 56)
+        Call .AddItem("Wales", 57)
+        Call .AddItem("Serbia", 58)
+        Call .AddItem("Suriname", 59)
+        Call .AddItem("Costa Rica", 60)
+        Call .AddItem("Honduras", 61)
+        Call .AddItem("Jamaica", 62)
+        Call .AddItem("Panama", 63)
+        Call .AddItem("Algeria", 64)
+        Call .AddItem("Angola", 65)
+        Call .AddItem("Burkina Faso", 66)
+        Call .AddItem("Cameroon", 67)
+        Call .AddItem("Congo", 68)
+        Call .AddItem("Congo DR", 69)
+        Call .AddItem("Gabon", 70)
+        Call .AddItem("Ivory Coast", 71)
+        Call .AddItem("Egypt", 72)
+        Call .AddItem("Ghana", 73)
+        Call .AddItem("Mali", 74)
+        Call .AddItem("Morocco", 75)
+        Call .AddItem("Nigeria", 76)
+        Call .AddItem("Senegal", 77)
+        Call .AddItem("Togo", 78)
+        Call .AddItem("Tunisia", 79)
+        Call .AddItem("Zambia", 80)
+        Call .AddItem("Zimbabwe", 81)
+        Call .AddItem("Iran", 82)
+        Call .AddItem("Israel", 83)
+        Call .AddItem("Korea Republic", 84)
+        Call .AddItem("Qatar", 85)
+        Call .AddItem("United Arab Emirates", 86)
+        Call .AddItem("Uzbekistan", 87)
+        Call .AddItem("New Zealand", 88)
         Let .ListIndex = 5
     End With
 
@@ -228,7 +255,7 @@ Finish:
     Exit Sub
 
 ErrHandler:
-    Call cgf.DisplayErrMessage("clsForm", "LoadCountries")
+    Call cgf.DisplayErrMessage("clsForm", i + "LoadCountries")
     GoTo Finish
 
 End Sub
@@ -236,6 +263,8 @@ End Sub
 
 Private Sub LoadCountriesHidden()
 
+    Dim i As Integer
+    Let i = 0
     Set cgf = New clsGlobalFunc
     Set frm = frSoFifa
 
@@ -284,33 +313,54 @@ Private Sub LoadCountriesHidden()
         Call .AddItem("&na%5B%5D=183", 38)
         Call .AddItem("&na%5B%5D=195", 39)
         Call .AddItem("&na%5B%5D=1", 40)
-        Call .AddItem("&na%5B%5D=8", 41)
-        Call .AddItem("&na%5B%5D=17", 42)
-        Call .AddItem("&na%5B%5D=19", 43)
-        Call .AddItem("&na%5B%5D=24", 44)
-        Call .AddItem("&na%5B%5D=25", 45)
-        Call .AddItem("&na%5B%5D=35", 46)
-        Call .AddItem("&na%5B%5D=43", 47)
-        Call .AddItem("&na%5B%5D=44", 48)
-        Call .AddItem("&na%5B%5D=50", 49)
-        Call .AddItem("&na%5B%5D=51", 50)
-        Call .AddItem("&na%5B%5D=72", 51)
-        Call .AddItem("&na%5B%5D=82", 52)
-        Call .AddItem("&na%5B%5D=87", 53)
-        Call .AddItem("&na%5B%5D=97", 54)
-        Call .AddItem("&na%5B%5D=103", 55)
-        Call .AddItem("&na%5B%5D=108", 56)
-        Call .AddItem("&na%5B%5D=111", 57)
-        Call .AddItem("&na%5B%5D=117", 58)
-        Call .AddItem("&na%5B%5D=129", 59)
-        Call .AddItem("&na%5B%5D=133", 60)
-        Call .AddItem("&na%5B%5D=136", 61)
-        Call .AddItem("&na%5B%5D=145", 62)
-        Call .AddItem("&na%5B%5D=161", 63)
-        Call .AddItem("&na%5B%5D=167", 64)
-        Call .AddItem("&na%5B%5D=182", 65)
-        Call .AddItem("&na%5B%5D=190", 66)
-        Call .AddItem("&na%5B%5D=198", 67)
+        Call .AddItem("&na%5B%5D=3", 41)
+        Call .AddItem("&na%5B%5D=6", 42)
+        Call .AddItem("&na%5B%5D=8", 43)
+        Call .AddItem("&na%5B%5D=9", 44)
+        Call .AddItem("&na%5B%5D=11", 45)
+        Call .AddItem("&na%5B%5D=17", 46)
+        Call .AddItem("&na%5B%5D=20", 47)
+        Call .AddItem("&na%5B%5D=219", 48)
+        Call .AddItem("&na%5B%5D=28", 49)
+        Call .AddItem("&na%5B%5D=15", 50)
+        Call .AddItem("&na%5B%5D=19", 51)
+        Call .AddItem("&na%5B%5D=24", 52)
+        Call .AddItem("&na%5B%5D=25", 53)
+        Call .AddItem("&na%5B%5D=35", 54)
+        Call .AddItem("&na%5B%5D=43", 55)
+        Call .AddItem("&na%5B%5D=44", 56)
+        Call .AddItem("&na%5B%5D=50", 57)
+        Call .AddItem("&na%5B%5D=51", 58)
+        Call .AddItem("&na%5B%5D=92", 59)
+        Call .AddItem("&na%5B%5D=72", 60)
+        Call .AddItem("&na%5B%5D=81", 61)
+        Call .AddItem("&na%5B%5D=82", 62)
+        Call .AddItem("&na%5B%5D=87", 63)
+        Call .AddItem("&na%5B%5D=97", 64)
+        Call .AddItem("&na%5B%5D=98", 65)
+        Call .AddItem("&na%5B%5D=101", 66)
+        Call .AddItem("&na%5B%5D=103", 67)
+        Call .AddItem("&na%5B%5D=107", 68)
+        Call .AddItem("&na%5B%5D=110", 69)
+        Call .AddItem("&na%5B%5D=115", 70)
+        Call .AddItem("&na%5B%5D=108", 71)
+        Call .AddItem("&na%5B%5D=111", 72)
+        Call .AddItem("&na%5B%5D=117", 73)
+        Call .AddItem("&na%5B%5D=126", 74)
+        Call .AddItem("&na%5B%5D=129", 75)
+        Call .AddItem("&na%5B%5D=133", 76)
+        Call .AddItem("&na%5B%5D=136", 77)
+        Call .AddItem("&na%5B%5D=144", 78)
+        Call .AddItem("&na%5B%5D=145", 79)
+        Call .AddItem("&na%5B%5D=147", 80)
+        Call .AddItem("&na%5B%5D=148", 81)
+        Call .AddItem("&na%5B%5D=161", 82)
+        Call .AddItem("&na%5B%5D=26", 83)
+        Call .AddItem("&na%5B%5D=167", 84)
+        Call .AddItem("&na%5B%5D=182", 85)
+        Call .AddItem("&na%5B%5D=190", 86)
+        Call .AddItem("&na%5B%5D=191", 87)
+        Call .AddItem("&na%5B%5D=198", 88)
         Let .ListIndex = frm.txCountry.ListIndex
     End With
 
@@ -323,7 +373,7 @@ Finish:
     Exit Sub
 
 ErrHandler:
-    Call cgf.DisplayErrMessage("clsForm", "LoadCountriesHidden")
+    Call cgf.DisplayErrMessage("clsForm", i + "LoadCountriesHidden")
     GoTo Finish
 
 End Sub
@@ -426,4 +476,75 @@ Public Sub SearchVersionList()
     Call oClsSFL.SearchVersionList
     Set oClsSFL = Nothing
     
+End Sub
+
+Public Sub ListboxClick()
+    
+    Dim oDto As VB.Clipboard
+    Dim sb As MSComctlLib.StatusBar
+    Dim playerName As String
+    Set cgf = New clsGlobalFunc
+    Set oDto = VB.Clipboard
+    Set frm = frSoFifa
+    Set sb = frm.btStatusBar
+    
+    On Error GoTo ErrHandler
+    
+    With frm
+        Let playerName = Trim(Split(.listPlayer.Text, vbTab)(2))
+        Let playerName = cgf.RegexFormat(playerName, False)
+        Let playerName = Replace(playerName, "'", vbNullString)
+        Call oDto.Clear
+        Call oDto.SetText(playerName)
+        Let sb.Panels(1).Text = playerName & " copied."
+    End With
+    
+    On Error GoTo 0
+
+Finish:
+    On Error Resume Next
+    Set cgf = Nothing
+    Set frm = Nothing
+    Set sb = Nothing
+    Set oDto = Nothing
+    Exit Sub
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("clsForm", "ListboxClick")
+    GoTo Finish
+
+End Sub
+
+
+Private Sub LoadTypes()
+
+    Dim i As Integer
+    Let i = 0
+    Set cgf = New clsGlobalFunc
+    Set frm = frSoFifa
+    
+    On Error GoTo ErrHandler
+
+    With frm.txType
+        Call .Clear
+        Call .AddItem("All", 0)
+        Call .AddItem("Updated", 1)
+        Call .AddItem("Added", 2)
+        Call .AddItem("Removed", 3)
+        Call .AddItem("Free", 3)
+        Let .ListIndex = 0
+    End With
+
+    On Error GoTo 0
+
+Finish:
+    On Error Resume Next
+    Set cgf = Nothing
+    Set frm = Nothing
+    Exit Sub
+
+ErrHandler:
+    Call cgf.DisplayErrMessage("clsForm", i + "LoadTypes")
+    GoTo Finish
+
 End Sub

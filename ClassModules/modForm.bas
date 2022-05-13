@@ -74,3 +74,10 @@ Public Sub PlayerChange()
     Call oCls.PlayerChange
     Set oCls = Nothing
 End Sub
+
+
+Public Sub ListboxClick()
+    Set oCls = New clsForm
+    Call oCls.ListboxClick
+    Set oCls = Nothing
+End Sub

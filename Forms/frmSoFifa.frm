@@ -7,7 +7,7 @@ Begin VB.Form frSoFifa
    ClientHeight    =   6735
    ClientLeft      =   45
    ClientTop       =   390
-   ClientWidth     =   11670
+   ClientWidth     =   12675
    FillColor       =   &H80000005&
    BeginProperty Font 
       Name            =   "Segoe UI"
@@ -24,7 +24,7 @@ Begin VB.Form frSoFifa
    MaxButton       =   0   'False
    ScaleHeight     =   449
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   778
+   ScaleWidth      =   845
    StartUpPosition =   2  'CenterScreen
    Begin VB.OptionButton txOrderClub 
       Caption         =   "Club"
@@ -58,7 +58,7 @@ Begin VB.Form frSoFifa
       Left            =   5400
       TabIndex        =   10
       Top             =   120
-      Width           =   6135
+      Width           =   7095
    End
    Begin MSComctlLib.Slider txMinOver 
       Height          =   495
@@ -145,8 +145,8 @@ Begin VB.Form frSoFifa
       Left            =   0
       TabIndex        =   12
       Top             =   6360
-      Width           =   11670
-      _ExtentX        =   20585
+      Width           =   12675
+      _ExtentX        =   22357
       _ExtentY        =   661
       ShowTips        =   0   'False
       _Version        =   393216
@@ -155,7 +155,7 @@ Begin VB.Form frSoFifa
          BeginProperty Panel1 {8E3867AB-8586-11D1-B16A-00C0F0283628} 
             Alignment       =   2
             AutoSize        =   1
-            Object.Width           =   20532
+            Object.Width           =   22304
             Text            =   "Ready"
             TextSave        =   "Ready"
          EndProperty
